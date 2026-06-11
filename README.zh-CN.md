@@ -13,7 +13,7 @@ server、自动化、GitHub 项目和 AI 产品。
 agent 中。统一安装说明会识别目标并执行对应分支。
 
 ```text
-Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/tool-advisor/refs/heads/main/.agent/INSTALL.md
+Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/tool-advisor/main/.agent/INSTALL.md
 ```
 
 ## 安装器会做什么

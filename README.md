@@ -15,7 +15,7 @@ shell-capable coding agent. The guide detects the target and applies the right
 branch.
 
 ```text
-Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/tool-advisor/refs/heads/main/.agent/INSTALL.md
+Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/tool-advisor/main/.agent/INSTALL.md
 ```
 
 ## What The Installer Does
