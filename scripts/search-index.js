@@ -31,6 +31,7 @@ function resolveDefaultRoot() {
  * @property {number} limit Maximum number of results to print.
  * @property {string} root Obsidian AI workspace root.
  * @property {string[]} dirs Relative directories to scan under root.
+ * @property {boolean} showAbsolutePaths Include local absolute paths in CLI output.
  */
 
 /**
@@ -44,7 +45,8 @@ function parseArgs(argv) {
     query: "",
     limit: 8,
     root: resolveDefaultRoot(),
-    dirs: DEFAULT_DIRS
+    dirs: DEFAULT_DIRS,
+    showAbsolutePaths: false
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -64,6 +66,8 @@ function parseArgs(argv) {
     } else if (arg === "--dirs" && argv[i + 1]) {
       args.dirs = argv[i + 1].split(",").map((item) => item.trim()).filter(Boolean);
       i += 1;
+    } else if (arg === "--show-absolute-paths") {
+      args.showAbsolutePaths = true;
     }
   }
 
@@ -83,12 +87,42 @@ function tokenize(query) {
     return [];
   }
 
-  const parts = normalized
+  const separatorParts = normalized
     .split(/[\s,.;:!?，。；：！？、()[\]{}"'`<>|\\/]+/u)
     .map((part) => part.trim())
     .filter(Boolean);
 
-  return [...new Set([normalized, ...parts])];
+  const compactParts = separatorParts.flatMap((part) => {
+    const latinRuns = part.match(/[a-z0-9._+#-]+/g) || [];
+    const cjkRuns = part.match(/[\p{Script=Han}]+/gu) || [];
+    return [...latinRuns, ...cjkRuns.flatMap(makeCjkNgrams)];
+  });
+
+  return [...new Set([normalized, ...separatorParts, ...compactParts])];
+}
+
+/**
+ * Build short Chinese n-grams for compact natural-language queries. This keeps
+ * Chinese input useful without adding a tokenizer dependency to a local plugin.
+ *
+ * @param {string} text Consecutive Han characters from the query.
+ * @returns {string[]} Searchable Chinese fragments.
+ */
+function makeCjkNgrams(text) {
+  const grams = [];
+  const maxSize = Math.min(4, text.length);
+
+  for (let size = 2; size <= maxSize; size += 1) {
+    for (let index = 0; index <= text.length - size; index += 1) {
+      grams.push(text.slice(index, index + size));
+    }
+  }
+
+  if (text.length === 1) {
+    grams.push(text);
+  }
+
+  return grams;
 }
 
 /**
@@ -180,17 +214,29 @@ function scoreNote(filePath, content, tokens) {
 }
 
 /**
+ * @typedef {Object} SearchResult
+ * @property {Array<{path: string, title: string, score: number, preview: string}>} results Ranked note matches.
+ * @property {number} scannedFileCount Number of Markdown files considered.
+ * @property {boolean} rootExists Whether the configured workspace root exists.
+ */
+
+/**
  * Search local Obsidian notes for candidate tools.
  *
  * @param {SearchArgs} args Search arguments.
- * @returns {Array<{path: string, title: string, score: number, preview: string}>}
+ * @returns {SearchResult} Ranked matches and scan diagnostics.
  */
 function search(args) {
   const tokens = tokenize(args.query);
   if (tokens.length === 0) {
-    return [];
+    return {
+      results: [],
+      scannedFileCount: 0,
+      rootExists: fs.existsSync(args.root)
+    };
   }
 
+  const rootExists = fs.existsSync(args.root);
   const files = args.dirs.flatMap((dir) => collectMarkdownFiles(path.join(args.root, dir)));
   const results = [];
 
@@ -213,26 +259,63 @@ function search(args) {
     }
   }
 
-  return results
-    .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
-    .slice(0, args.limit);
+  return {
+    results: results
+      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
+      .slice(0, args.limit),
+    scannedFileCount: files.length,
+    rootExists
+  };
+}
+
+/**
+ * Build JSON-safe CLI output. Absolute paths are opt-in so shared logs do not
+ * expose local machine layout by default.
+ *
+ * @param {SearchArgs} args Search arguments.
+ * @param {SearchResult} searchResult Search results and diagnostics.
+ * @returns {Object} JSON-ready output contract for agent consumers.
+ */
+function formatOutput(args, searchResult) {
+  const output = {
+    query: args.query,
+    root_exists: searchResult.rootExists,
+    scanned_dirs: args.dirs,
+    scanned_file_count: searchResult.scannedFileCount,
+    result_count: searchResult.results.length,
+    results: searchResult.results.map((result) => {
+      const relativePath = path.relative(args.root, result.path) || path.basename(result.path);
+      const formatted = {
+        path: relativePath.split(path.sep).join("/"),
+        title: result.title,
+        score: result.score,
+        preview: result.preview
+      };
+
+      if (args.showAbsolutePaths) {
+        formatted.absolute_path = result.path;
+      }
+
+      return formatted;
+    })
+  };
+
+  if (args.showAbsolutePaths) {
+    output.root = args.root;
+  }
+
+  return output;
 }
 
 /**
  * Print search results as JSON for reliable agent parsing.
  *
  * @param {SearchArgs} args Search arguments.
- * @param {ReturnType<typeof search>} results Search results.
+ * @param {SearchResult} searchResult Search results and diagnostics.
  * @returns {void}
  */
-function printResults(args, results) {
-  const output = {
-    query: args.query,
-    root: args.root,
-    scanned_dirs: args.dirs,
-    result_count: results.length,
-    results
-  };
+function printResults(args, searchResult) {
+  const output = formatOutput(args, searchResult);
 
   process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }
@@ -246,7 +329,9 @@ module.exports = {
   parseArgs,
   resolveDefaultRoot,
   tokenize,
+  makeCjkNgrams,
   collectMarkdownFiles,
   scoreNote,
-  search
+  search,
+  formatOutput
 };
