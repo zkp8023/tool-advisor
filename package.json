@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "description": "Local and portable tool recommendation helper for agent workflows.",
-  "type": "commonjs",
+  "type": "module",
   "bin": {
-    "tool-advisor-search": "./scripts/search-index.js"
+    "tool-advisor": "./bin/tool-advisor.js",
+    "tool-advisor-search": "./bin/tool-advisor-search.js",
+    "tool-advisor-install": "./bin/tool-advisor-install.js"
   },
   "scripts": {
-    "check": "node --check ./scripts/search-index.js",
+    "check": "node --check ./src/search.js && node --check ./src/cli.js && node --check ./src/install.js && node --check ./bin/tool-advisor.js && node --check ./bin/tool-advisor-search.js && node --check ./bin/tool-advisor-install.js && node --check ./scripts/search-index.js && node --check ./scripts/cli.js",
     "test": "node ./test/search-index.test.js"
   },
   "engines": {

@@ -1,0 +1,18 @@
+{
+  "name": "tool-advisor",
+  "description": "Tool Advisor plugin marketplace",
+  "owner": {
+    "name": "zkp8023"
+  },
+  "plugins": [
+    {
+      "name": "tool-advisor",
+      "description": "Recommend tools, plugins, skills, MCP servers, automations, GitHub projects, and AI products by searching a local AI tools knowledge vault first.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "zkp8023"
+      }
+    }
+  ]
+}

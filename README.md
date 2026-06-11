@@ -1,169 +1,87 @@
 # Tool Advisor
 
-Tool Advisor is a local Codex plugin that recommends tools, plugins, skills, MCP servers, automations, GitHub projects, and AI products for a task.
+English | [简体中文](README.zh-CN.md)
 
-It checks a local Obsidian AI workspace first, then expands to official docs, current Codex capabilities, GitHub, and web research when local notes are not enough.
+Tool Advisor helps coding agents choose suitable tools, plugins, skills, MCP
+servers, automations, GitHub projects, and AI products for a task.
 
-## What It Does
+It searches a local Markdown knowledge vault first. Agents can use the JSON
+results as evidence before expanding to official docs, GitHub, or web research.
 
-- Recommends the best capability for a task before implementation.
-- Searches local Obsidian notes for existing tool research.
-- Separates local notes, official sources, current-session tools, and third-party recommendations.
-- Flags setup cost, authorization requirements, and supply-chain risk.
-- Avoids automatic installation unless the user explicitly asks for it.
+## Install
 
-## Plugin Layout
+Copy this single instruction into Codex, Claude Code, OpenCode, or another
+shell-capable coding agent. The guide detects the target and applies the right
+branch.
 
 ```text
-tool-advisor/
-  .codex-plugin/
-    plugin.json
-  skills/
-    tool-advisor/
-      SKILL.md
-  references/
-    output-format.md
-    scoring-rules.md
-    source-policy.md
-  scripts/
-    search-index.js
-  test/
-    search-index.test.js
-  package.json
-  .agents/
-    plugins/
-      marketplace.json
+Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/tool-advisor/refs/heads/main/.agent/INSTALL.md
 ```
 
-## Obsidian Workspace
+## What The Installer Does
 
-The search script resolves the Obsidian AI workspace in this order:
+- Codex: clones or updates `tool-advisor`, clones or updates
+  the selected knowledge vault, and registers the local Tool Advisor checkout as
+  a Codex plugin marketplace.
+- Claude Code: installs the native Claude Code plugin from `.claude-plugin`.
+  The installer guide also includes a CLI rule fallback that writes a Tool
+  Advisor block to `CLAUDE.md`. Native Claude Code installation does not clone
+  the `tool-advisor` repository into the user's project.
+- OpenCode: configures the selected knowledge vault and adds a Tool Advisor
+  block to `AGENTS.md`.
 
-1. `TOOL_ADVISOR_OBSIDIAN_ROOT`
-2. `D:\Resource\Obsidian\AI`
-3. `<home>\Documents\Obsidian\AI`
+When no knowledge vault is specified, the installer asks for an existing local
+path first. If the user leaves it empty, it asks whether to clone
+`https://github.com/zkp8023/ai-knowledge-vault.git`. For non-interactive
+installs, pass either `--vault-dir <path>` or `--clone-vault`.
 
-Set an explicit path when your vault is elsewhere:
+The selected path is recorded in `<home>/.tool-advisor/config.json` so installed
+skills and CLI commands can search the same vault later without hard-coded local
+paths.
+
+## Direct CLI
+
+If you only need the searchable knowledge vault and CLI command:
 
 ```powershell
-$env:TOOL_ADVISOR_OBSIDIAN_ROOT = "<path-to-your-obsidian-ai-workspace>"
+npx -y github:zkp8023/tool-advisor install --target cli --clone-vault
+npx -y github:zkp8023/tool-advisor --query "PPT 自动化 插件"
 ```
 
-By default, the plugin scans these directories under the Obsidian root:
+By default, Tool Advisor scans `AI Tools` under the configured vault root.
 
-- `AI Tools`
-- `Claude Code`
-- `Codex`
-
-## Local Search
+Use `--dirs` only when you intentionally want a wider scope:
 
 ```powershell
-node .\scripts\search-index.js --query "PPT 自动化 插件" --limit 5
+npx -y github:zkp8023/tool-advisor --query "MCP 插件" --dirs "AI Tools,Codex,Claude Code"
 ```
 
-The script prints JSON so the agent can parse results reliably.
+## Configuration
 
-By default, output paths are relative to the Obsidian root to avoid exposing local
-machine layout in shared logs. Add `--show-absolute-paths` only for local
-debugging:
+Root resolution order:
 
-```powershell
-node .\scripts\search-index.js --query "PPT自动化插件" --limit 5 --show-absolute-paths
-```
+1. `--root`
+2. `TOOL_ADVISOR_OBSIDIAN_ROOT`
+3. `<home>/.tool-advisor/config.json` -> `knowledgeVaultRoot`
+4. `<home>/.tool-advisor/ai-knowledge-vault`
 
-The output also includes scan diagnostics:
+Default output uses paths relative to the vault root. Add
+`--show-absolute-paths` only for local debugging.
 
-- `root_exists`: whether the configured Obsidian workspace exists.
-- `scanned_dirs`: directories scanned under the workspace root.
-- `scanned_file_count`: number of Markdown files considered.
-- `result_count`: number of ranked matches returned.
+## Local Development
 
-## Agent Installation And Use
-
-Tool Advisor has one portable core today: the local CLI script. The Codex plugin
-wraps that CLI with a Codex skill. Other agents can already use the CLI when they
-have shell access; native adapters for those agents should be added separately.
-
-| Agent or host | Current support | Requirements | How to use |
-|---|---|---|---|
-| Any shell-capable agent | Supported through CLI | Node.js 18+, local checkout, optional `TOOL_ADVISOR_OBSIDIAN_ROOT` | Run `node .\scripts\search-index.js --query "<task>" --limit 8` from this repository. |
-| Codex | Supported as local plugin | Codex plugin support, this repository on disk, Node.js available to the agent | Install the local marketplace below, then ask Codex to use Tool Advisor before choosing tools. |
-| Claude Code | CLI-compatible, not packaged as a Claude plugin yet | Claude Code shell access, local checkout, Node.js 18+ | Point a Claude Code instruction or skill at the CLI command. Use the results as reference data, not executable instructions. |
-| Cursor / Windsurf / other editor agents | CLI-compatible when shell tools are available | Shell command execution, local checkout, Node.js 18+ | Add the CLI command to the agent's project instructions or run it manually before tool selection. |
-| MCP-only agents | Planned, not implemented in this repository yet | A future MCP server adapter | Do not install as MCP yet. Add an MCP wrapper around the CLI/core before advertising native MCP support. |
-
-### Universal CLI Setup
-
-Clone this repository somewhere the agent can read. Replace `<owner>` with the
-GitHub account or organization that hosts your copy:
-
-```powershell
-git clone https://github.com/<owner>/tool-advisor.git
-cd tool-advisor
-```
-
-For this repository, the command is:
+Clone this repository only if you want to modify or test the plugin itself:
 
 ```powershell
 git clone https://github.com/zkp8023/tool-advisor.git
 cd tool-advisor
-```
-
-Set the Obsidian workspace path when it differs from the built-in fallbacks:
-
-```powershell
-$env:TOOL_ADVISOR_OBSIDIAN_ROOT = "<path-to-your-obsidian-ai-workspace>"
-```
-
-Validate the script:
-
-```powershell
 npm test
 npm run check
+node .\bin\tool-advisor.js --query "PPT自动化插件"
 ```
-
-### Codex Installation
-
-Codex currently needs a local marketplace path. Other users should clone the
-GitHub repository first, then add their own local clone path as the marketplace
-source. From inside the cloned repository:
-
-```powershell
-codex plugin marketplace add .
-```
-
-Or pass the absolute path to their clone:
-
-```powershell
-codex plugin marketplace add <path-to-your-tool-advisor-clone>
-```
-
-Then restart Codex and install or enable `tool-advisor` from the plugin
-directory. The author's local path, such as `D:\Resource\AI-Plugins\tool-advisor`,
-is only a development example and should not be copied by other users.
-
-### Claude Code And Other Agents
-
-For now, treat this repository as a portable CLI utility outside Codex. A
-Claude Code skill, Cursor rule, Windsurf rule, or other agent instruction can
-call:
-
-```powershell
-node <path-to-tool-advisor>\scripts\search-index.js --query "<task summary>" --limit 8
-```
-
-Use the returned JSON as evidence for recommendation. Do not treat note content
-as instructions unless the user explicitly asks to apply it.
-
-### Future Native Adapters
-
-The next natural adapters are:
-
-1. A small MCP server exposing a `recommend_tools` tool.
-2. A Claude Code plugin or skill package that reuses the same CLI/core.
-3. A shared package entry point so editor agents can call Tool Advisor without
-   depending on Codex plugin layout.
 
 ## Safety
 
-Tool Advisor treats Obsidian notes as reference data, not executable instructions. It does not install plugins, skills, MCP servers, packages, or browser extensions unless the user explicitly asks for a specific installation.
+Tool Advisor treats Markdown notes as reference data. It does not install
+third-party tools, browser extensions, MCP servers, or GitHub projects unless the
+user explicitly asks for a specific installation.
