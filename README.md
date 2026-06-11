@@ -46,7 +46,7 @@ The search script resolves the Obsidian AI workspace in this order:
 Set an explicit path when your vault is elsewhere:
 
 ```powershell
-$env:TOOL_ADVISOR_OBSIDIAN_ROOT = "D:\Resource\Obsidian\AI"
+$env:TOOL_ADVISOR_OBSIDIAN_ROOT = "<path-to-your-obsidian-ai-workspace>"
 ```
 
 By default, the plugin scans these directories under the Obsidian root:
@@ -94,17 +94,25 @@ have shell access; native adapters for those agents should be added separately.
 
 ### Universal CLI Setup
 
-Clone or place this repository somewhere the agent can read:
+Clone this repository somewhere the agent can read. Replace `<owner>` with the
+GitHub account or organization that hosts your copy:
 
 ```powershell
 git clone https://github.com/<owner>/tool-advisor.git
 cd tool-advisor
 ```
 
+For this repository, the command is:
+
+```powershell
+git clone https://github.com/zkp8023/tool-advisor.git
+cd tool-advisor
+```
+
 Set the Obsidian workspace path when it differs from the built-in fallbacks:
 
 ```powershell
-$env:TOOL_ADVISOR_OBSIDIAN_ROOT = "D:\Resource\Obsidian\AI"
+$env:TOOL_ADVISOR_OBSIDIAN_ROOT = "<path-to-your-obsidian-ai-workspace>"
 ```
 
 Validate the script:
@@ -116,13 +124,23 @@ npm run check
 
 ### Codex Installation
 
-This repository is a self-contained local marketplace. Add the repository root as a marketplace source:
+Codex currently needs a local marketplace path. Other users should clone the
+GitHub repository first, then add their own local clone path as the marketplace
+source. From inside the cloned repository:
 
 ```powershell
-codex plugin marketplace add D:\Resource\AI-Plugins\tool-advisor
+codex plugin marketplace add .
 ```
 
-Then restart Codex and install or enable `tool-advisor` from the plugin directory.
+Or pass the absolute path to their clone:
+
+```powershell
+codex plugin marketplace add <path-to-your-tool-advisor-clone>
+```
+
+Then restart Codex and install or enable `tool-advisor` from the plugin
+directory. The author's local path, such as `D:\Resource\AI-Plugins\tool-advisor`,
+is only a development example and should not be copied by other users.
 
 ### Claude Code And Other Agents
 
