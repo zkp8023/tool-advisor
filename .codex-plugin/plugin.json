@@ -1,0 +1,22 @@
+{
+  "name": "tool-advisor",
+  "version": "0.1.0+codex.20260611055458",
+  "description": "Recommends tools, plugins, skills, MCP servers, and AI products for a task by checking local Obsidian notes first, then external sources when needed.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Tool Advisor",
+    "shortDescription": "Recommend the right tool or plugin for a task.",
+    "longDescription": "Tool Advisor helps choose between local skills, Codex plugins, MCP servers, automations, GitHub projects, and AI tools. It prioritizes the local Obsidian AI workspace before using web or GitHub research.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Tool discovery",
+      "Plugin recommendations",
+      "Local Obsidian index search"
+    ],
+    "defaultPrompt": "Use Tool Advisor to recommend the best tool, plugin, skill, MCP server, or AI product for my task."
+  }
+}

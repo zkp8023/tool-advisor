@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Runtime output
+*.log
+tmp/
+temp/
+.cache/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Codex/local install state
+.codex-cache/
