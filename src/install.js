@@ -6,6 +6,8 @@ import path from "node:path";
 const TOOL_ADVISOR_REPO = "https://github.com/zkp8023/tool-advisor.git";
 const KNOWLEDGE_VAULT_REPO = "https://github.com/zkp8023/ai-knowledge-vault.git";
 const CONFIG_FILE_NAME = "config.json";
+const CODEX_MARKETPLACE_NAME = "tool-advisor-local";
+const CODEX_PLUGIN_NAME = "tool-advisor";
 
 /**
  * @typedef {Object} InstallArgs
@@ -190,6 +192,30 @@ function runCommand(command, args, options) {
 }
 
 /**
+ * Run a best-effort command that may legitimately fail on first install. This
+ * is used to remove an old Codex marketplace with the same name before adding
+ * the current standard marketplace root.
+ *
+ * @param {string} command Executable name.
+ * @param {string[]} args Command arguments.
+ * @param {{cwd?: string, dryRun: boolean}} options Execution options.
+ * @returns {void}
+ */
+function runOptionalCommand(command, args, options) {
+  const rendered = [command, ...args].join(" ");
+  if (options.dryRun) {
+    process.stdout.write(`[dry-run] ${rendered} || true\n`);
+    return;
+  }
+
+  spawnSync(command, args, {
+    cwd: options.cwd,
+    shell: process.platform === "win32",
+    stdio: "ignore"
+  });
+}
+
+/**
  * Clone a repository if missing, otherwise fast-forward it.
  *
  * @param {string} repoUrl Git repository URL.
@@ -204,6 +230,64 @@ function ensureRepo(repoUrl, targetDir, options) {
   }
 
   runCommand("git", ["clone", repoUrl, targetDir], options);
+}
+
+/**
+ * Write a standard Codex marketplace rooted at `baseDir`. Codex expects
+ * marketplace entries to point at plugin directories below `./plugins`, so the
+ * installer clones Tool Advisor to `baseDir/plugins/tool-advisor` and registers
+ * `baseDir` as the marketplace root.
+ *
+ * @param {string} baseDir Tool Advisor state directory and marketplace root.
+ * @param {{dryRun: boolean}} options Execution options.
+ * @returns {void}
+ */
+function writeCodexMarketplace(baseDir, options) {
+  const marketplacePath = path.join(baseDir, ".agents", "plugins", "marketplace.json");
+  const marketplace = {
+    name: CODEX_MARKETPLACE_NAME,
+    interface: {
+      displayName: "Tool Advisor Local"
+    },
+    plugins: [
+      {
+        name: CODEX_PLUGIN_NAME,
+        source: {
+          source: "local",
+          path: "./plugins/tool-advisor"
+        },
+        policy: {
+          installation: "AVAILABLE",
+          authentication: "ON_INSTALL"
+        },
+        category: "Productivity"
+      }
+    ]
+  };
+
+  if (options.dryRun) {
+    process.stdout.write(`[dry-run] write ${marketplacePath}\n`);
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(marketplacePath), { recursive: true });
+  fs.writeFileSync(`${marketplacePath}.tmp`, `${JSON.stringify(marketplace, null, 2)}\n`, "utf8");
+  fs.renameSync(`${marketplacePath}.tmp`, marketplacePath);
+}
+
+/**
+ * Register and install the Codex plugin from the local marketplace. Removing
+ * the same marketplace name first makes the command idempotent when users have
+ * an older `tool-advisor-local` entry pointing at a development checkout.
+ *
+ * @param {string} marketplaceRoot Local marketplace root.
+ * @param {{dryRun: boolean}} options Execution options.
+ * @returns {void}
+ */
+function installCodexPlugin(marketplaceRoot, options) {
+  runOptionalCommand("codex", ["plugin", "marketplace", "remove", CODEX_MARKETPLACE_NAME], options);
+  runCommand("codex", ["plugin", "marketplace", "add", marketplaceRoot], options);
+  runCommand("codex", ["plugin", "add", `${CODEX_PLUGIN_NAME}@${CODEX_MARKETPLACE_NAME}`], options);
 }
 
 /**
@@ -289,7 +373,7 @@ export function upsertInstructionBlock(filePath, block, options) {
  */
 export function installToolAdvisor(args) {
   const baseDir = path.resolve(args.baseDir);
-  const pluginDir = path.join(baseDir, "tool-advisor");
+  const pluginDir = path.join(baseDir, "plugins", CODEX_PLUGIN_NAME);
   const defaultVaultDir = path.join(baseDir, "ai-knowledge-vault");
   const vaultSource = resolveVaultSource(args, defaultVaultDir);
   const vaultDir = vaultSource.vaultDir;
@@ -300,6 +384,7 @@ export function installToolAdvisor(args) {
 
   if (args.target === "codex") {
     ensureRepo(TOOL_ADVISOR_REPO, pluginDir, args);
+    writeCodexMarketplace(baseDir, args);
   }
 
   if (vaultSource.shouldClone) {
@@ -313,7 +398,7 @@ export function installToolAdvisor(args) {
   }
 
   if (args.target === "codex") {
-    runCommand("codex", ["plugin", "marketplace", "add", pluginDir], args);
+    installCodexPlugin(baseDir, args);
   }
 
   if (args.writeInstructions) {
@@ -328,10 +413,11 @@ export function installToolAdvisor(args) {
   process.stdout.write(`\nTool Advisor ${args.target} installation step completed.\n`);
   if (args.target === "codex") {
     process.stdout.write(`Plugin checkout: ${pluginDir}\n`);
+    process.stdout.write(`Codex marketplace: ${baseDir}\n`);
   }
   process.stdout.write(`Knowledge vault: ${vaultDir}\n`);
   if (args.target === "codex") {
-    process.stdout.write("\nRestart Codex, then enable or install tool-advisor from Plugins.\n");
+    process.stdout.write("\nRestart Codex or start a new thread so the installed plugin is picked up.\n");
   }
   process.stdout.write("For CLI search, use:\n");
   process.stdout.write(`npx -y github:zkp8023/tool-advisor --query "<task>" --root "${vaultDir}"\n`);

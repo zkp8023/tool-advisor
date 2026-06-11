@@ -2,12 +2,21 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const CONFIG_PATH = process.env.TOOL_ADVISOR_CONFIG
-  || path.join(os.homedir(), ".tool-advisor", "config.json");
 const DEFAULT_ROOT_CANDIDATES = [
   path.join(os.homedir(), ".tool-advisor", "ai-knowledge-vault")
 ];
 const DEFAULT_DIRS = ["AI Tools"];
+
+/**
+ * Resolve the installer config path at call time so tests and agent sessions can
+ * override it with `TOOL_ADVISOR_CONFIG` without reloading the module.
+ *
+ * @returns {string} Tool Advisor config path.
+ */
+function resolveConfigPath() {
+  return process.env.TOOL_ADVISOR_CONFIG
+    || path.join(os.homedir(), ".tool-advisor", "config.json");
+}
 
 /**
  * Read the knowledge vault path recorded by the installer.
@@ -15,12 +24,13 @@ const DEFAULT_DIRS = ["AI Tools"];
  * @returns {string} Configured knowledge vault path, or an empty string.
  */
 export function readConfiguredRoot() {
-  if (!fs.existsSync(CONFIG_PATH)) {
+  const configPath = resolveConfigPath();
+  if (!fs.existsSync(configPath)) {
     return "";
   }
 
   try {
-    const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
     return typeof config.knowledgeVaultRoot === "string" ? config.knowledgeVaultRoot : "";
   } catch {
     return "";

@@ -18,7 +18,7 @@ Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/too
 
 ## 安装器会做什么
 
-- Codex：clone 或更新 `tool-advisor`，clone 或更新选定知识库，并把本地 Tool Advisor checkout 注册为 Codex 插件市场。
+- Codex：把 `tool-advisor` clone 或更新到标准本地 Codex marketplace 下，配置选定知识库，注册该 marketplace，并安装 `tool-advisor@tool-advisor-local`。
 - Claude Code：通过 `.claude-plugin` 安装 Claude Code 原生插件。安装说明里也保留 CLI 规则兜底方案，可向 `CLAUDE.md` 写入 Tool Advisor 规则块。Claude Code 原生安装不会把 `tool-advisor` 仓库 clone 到用户项目里。
 - OpenCode：配置选定知识库，并向 `AGENTS.md` 添加 Tool Advisor 规则块。
 

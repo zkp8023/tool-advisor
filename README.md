@@ -20,9 +20,9 @@ Fetch and follow instructions from https://raw.githubusercontent.com/zkp8023/too
 
 ## What The Installer Does
 
-- Codex: clones or updates `tool-advisor`, clones or updates
-  the selected knowledge vault, and registers the local Tool Advisor checkout as
-  a Codex plugin marketplace.
+- Codex: clones or updates `tool-advisor` under a standard local Codex
+  marketplace, configures the selected knowledge vault, registers that
+  marketplace, and installs `tool-advisor@tool-advisor-local`.
 - Claude Code: installs the native Claude Code plugin from `.claude-plugin`.
   The installer guide also includes a CLI rule fallback that writes a Tool
   Advisor block to `CLAUDE.md`. Native Claude Code installation does not clone

@@ -21,8 +21,7 @@
 npx -y github:zkp8023/tool-advisor install --target codex
 ```
 
-安装器会 clone 或更新 `tool-advisor`，配置选定知识库，并把本地 checkout 注册为
-Codex 插件市场。安装后重启 Codex，然后在 Plugins 中启用或安装 `tool-advisor`。
+安装器会把 `tool-advisor` clone 或更新到标准本地 Codex marketplace 下，配置选定知识库，注册该 marketplace，并安装 `tool-advisor@tool-advisor-local`。安装后重启 Codex 或开启新线程，让插件被加载。
 
 ### Claude Code
 
@@ -97,7 +96,7 @@ npx -y github:zkp8023/tool-advisor --query "浏览器自动化"
 
 ## 更新
 
-再次运行相同目标命令即可。已 clone 的 checkout 会通过 `git pull --ff-only` 更新，带标记的规则块会被原地替换。
+再次运行相同目标命令即可。已 clone 的 checkout 会通过 `git pull --ff-only` 更新，Codex 会重新安装 `tool-advisor@tool-advisor-local`，带标记的规则块会被原地替换。
 
 Claude Code 原生插件可再次运行 `/plugin install tool-advisor@tool-advisor` 更新。
 

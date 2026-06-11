@@ -21,10 +21,10 @@ Run:
 npx -y github:zkp8023/tool-advisor install --target codex
 ```
 
-The installer clones or updates `tool-advisor`, configures the selected
-knowledge vault, and registers the local checkout as a Codex plugin marketplace.
-Restart Codex after installation, then enable or install `tool-advisor` from
-Plugins.
+The installer clones or updates `tool-advisor` under a standard local Codex
+marketplace, configures the selected knowledge vault, registers that marketplace,
+and installs `tool-advisor@tool-advisor-local`. Restart Codex or start a new
+thread after installation so the plugin is picked up.
 
 ### Claude Code
 
@@ -106,7 +106,8 @@ npx -y github:zkp8023/tool-advisor --query "浏览器自动化"
 ## Updating
 
 Run the same target command again. Existing cloned checkouts are updated with
-`git pull --ff-only`, and marked instruction blocks are replaced in place.
+`git pull --ff-only`, Codex reinstalls `tool-advisor@tool-advisor-local`, and
+marked instruction blocks are replaced in place.
 
 For Claude Code, run `/plugin install tool-advisor@tool-advisor` again to update
 the native plugin.
