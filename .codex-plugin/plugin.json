@@ -1,6 +1,6 @@
 {
   "name": "tool-advisor",
-  "version": "0.1.0+codex.20260611123010",
+  "version": "0.1.0+codex.20260612032525",
   "description": "Recommends tools, plugins, skills, MCP servers, and AI products for a task by checking local Obsidian notes first, then external sources when needed.",
   "author": {
     "name": "Local developer"
